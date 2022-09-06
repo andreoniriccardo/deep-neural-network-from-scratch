@@ -22,7 +22,7 @@ def main():
   train_val_split = 0.8
   train_size = round(df_train.shape[0] * train_val_split)
   #X_train = df_train[]
-  print("hello")
+  print("hello!")
 
 
 
