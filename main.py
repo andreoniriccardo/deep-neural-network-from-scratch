@@ -9,7 +9,8 @@ def shuffle_data(data):
   """
   # Convert input dataframe to ndarray
   data = np.array(data)
-  return np.random.shuffle(data)
+  np.random.shuffle(data)
+  return data
   
 def main():
   df_train = pd.read_csv('train.csv')
@@ -21,7 +22,7 @@ def main():
   train_val_split = 0.8
   train_size = round(df_train.shape[0] * train_val_split)
   #X_train = df_train[]
-
+  print("hello")
 
 
 
