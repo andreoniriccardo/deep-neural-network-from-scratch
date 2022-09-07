@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from utils import *
 
 def shuffle_data(data):
   """
@@ -44,4 +45,5 @@ def main():
 
 
 if __name__ == '__main__':
-  main()
+  #main()
+  print(one_hot(np.array([1,2,3])))
