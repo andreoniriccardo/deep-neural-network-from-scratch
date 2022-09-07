@@ -15,21 +15,6 @@ def sigmoid(Z):
   A = np.exp(Z)/sum(np.exp(Z))
   return A
 
-def forward_prop(A_prev, W, b, activation):
-  """
-  Input: A_prev (b,c); W (a,b); b (a,1); activation (sigmoid or relu)
-  Output: A, Z (a,c)
-  """
-  if activation == 'relu':
-    Z = np.dot(W, A_prev) + b
-    A = relu(Z)
-  elif activation == 'sigmoid':
-    Z = np.dot(W, A_prev) + b
-    A = sigmoid(Z)
-  else:
-    raise Exception('Unknown activation function.')
-  return A, Z
-
 def one_hot(Y):
   """
   Y should have shape n,1 where n is the number of classes.
@@ -44,3 +29,78 @@ def one_hot(Y):
   # transpose
   Y_one_hot = Y_one_hot.T
   return Y_one_hot
+
+def forward_prop(X, params):
+  """
+  Forward propagation for the L layers.
+  First (L-1) layers: relu activation
+  Last layer: sigmoid activation
+  """
+  # number of layers (note: params contains W and b for each layer, so it's necessary to do //2)
+  L = len(params) // 2
+
+  # initiallize the first activation as the input
+  A = X
+  # initiallize the cache as an empty list
+  cache = []
+  # Relu activation
+  for l in range(0,L):
+    Z = np.dot(params['W'+str(l)],A) + params['b'+str(l)]
+    A_new = 
+
+    cache.append((Z,))
+    
+
+
+
+
+  
+  """
+  Input: A_prev (b,c); W (a,b); b (a,1); activation (sigmoid or relu)
+  Output: A, Z (a,c)
+  """
+  if activation == 'relu':
+    Z = np.dot(W, A_prev) + b
+    A = relu(Z)
+  elif activation == 'sigmoid':
+    Z = np.dot(W, A_prev) + b
+    A = sigmoid(Z)
+  else:
+    raise Exception('Unknown activation function.')
+  return A, Z
+
+
+
+def back_prop(activations, params, Y):
+  """
+  Inputs:
+  cache: dictionary like {'A1':..., 'Z1':..., 'A2':..., ...}
+  weights: dictionary like {'W1':..., 'W2':...}
+  """
+  m = Y.shape[1]
+  L = len(params) // 2
+
+  # for last layer L
+  one_hot_Y = one_hot(Y)
+  dZ_l = activations['A'+str(L)] - one_hot_Y
+  grads['dW'+str(L)] = 1 / m * np.dot(dZ_l, activations['A'+str(L-1)].T)
+  grads['db'+str(L)] = 1 / m * np.sum(dZ_l)
+
+  for l in range(1, L):
+    dZ_l = np.dot(params['W'+str(l+1)].T, dZ_l) * deriv_relu(cache['Z'+str(l)])
+    grads['dW'+str(l)] = 1 / m * np.dot(dZ_l, activations['A'+str(l-1)].T)
+    # NOTA MIA cache deve contenere cache = {'Z1':... , 'Z2': ...}
+    # NOTA MIA  A0 = X
+    grads['db'+str(l)] = 1 / m * np.sum(dZ_l)
+  return grads
+
+def update_params(params, grads, alpha):
+  # number of layers
+  L = len(params) // 2
+
+  params_updated = {}
+  for l in range(1, L+1):
+    params_updated['W'+str(l)] = params['W'+str(l)] - alpha*grads['dW'+str(l)]
+    params_updated['b'+str(l)] = params['b'+str(l)] - alpha*grads['db'+str(l)]
+
+  return params_updated
