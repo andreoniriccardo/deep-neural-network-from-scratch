@@ -97,11 +97,11 @@ def update_params(params, grads, alpha):
 
   return params_updated
 
-def cross_entropy(Y, Y_hat, epsilon=1e-12):
+def cross_entropy(Y_one_hot, Y_hat, epsilon=1e-12):
   """
-  Compute cross entropy between target Y_hat (encoded as one-hot vector)
-  and predictions Y.
-  Inputs: Y (k, m) ndarray
+  Compute cross entropy between target Y_one_hot (encoded as one-hot vector)
+  and predictions Y_hat.
+  Inputs: Y_one_hot (k, m) ndarray
           Y_hat (k, m) ndarray
           k: number of classes
           N: number of samples
@@ -112,8 +112,51 @@ def cross_entropy(Y, Y_hat, epsilon=1e-12):
   """
   
   # clip predictions to avoid values of 0 and 1
-  Y = np.clip(Y, epsilon, 1.-epsilon)
+  Y_hat = np.clip(Y_hat, epsilon, 1.-epsilon)
   # sum on the columns of Y_hat * np.log(Y), then take the mean 
   # between the m samples
-  cross_entropy = -np.mean(np.sum(Y_hat * np.log(Y), axis=0))
+  cross_entropy = -np.mean(np.sum(Y_one_hot * np.log(Y_hat), axis=0))
   return cross_entropy
+
+def get_predictions(AL):
+  # get the max index by the columns  
+  return np.argmax(AL, axis=0)
+  
+def get_accuracy(Y_hat, Y):
+  """
+  Given the predicted classes Y_hat and the actual classes Y, returns the accuracy of the prediction
+  Input:
+  Y_hat (1,m) ndarray
+  Y (1,m) ndarray
+  Output:
+  accuract (scalar)
+  """
+  return np.sum(Y_hat == Y) / Y.size
+
+def gradient_descent_optimization(X, Y, layers_size, max_iter, alpha):
+  # initiallize parameters Wl, bl for layers l=1,...,L
+  params = init_params(layers_size)
+  L = len(params)//2
+  accuracies = []
+  losses = []
+  for iter in range(1,max_iter+1):
+    # compute activations: forward propagation
+    activations = forward_prop(X, params)
+    # make prediction
+    Y_hat = get_predictions(activations['A'+str(L)])
+    # compute accuracy
+    accuracy = get_accuracy(Y_hat, Y)
+    accuracies.append(accuracy)
+    
+    # compute loss (cross_entropy)
+    loss = cross_entropy(one_hot(Y), activations['A'+str(L)])
+    losses.append(loss)
+
+    # compute gradients: back propagation
+    grads = back_prop(activations, params, Y)
+
+    # update the parameters
+    params = update_params(params, grads, alpha)
+
+    # magari plottare il grafico ogni 10 iter
+  return params
