@@ -37,6 +37,8 @@ def main():
   # normalize training set
   X_train = normalize_pixels(X_train)
 
+  
+
 
 
 
@@ -45,5 +47,5 @@ def main():
 
 
 if __name__ == '__main__':
-  #main()
-  print(one_hot(np.array([1,2,3])))
+  main()
+  

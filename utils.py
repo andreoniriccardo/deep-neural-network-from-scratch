@@ -15,6 +15,10 @@ def sigmoid(Z):
   A = np.exp(Z)/sum(np.exp(Z))
   return A
 
+def deriv_relu(Z):
+  return Z > 0
+
+
 def one_hot(Y):
   """
   Y should have shape n,1 where n is the number of classes.
@@ -47,17 +51,11 @@ def forward_prop(X, params):
     activations['Z'+str(l)] = np.dot(params['W'+str(l)], activations['A'+str(l-1)]) + params['b'+str(l)]
     activations['A'+str(l)] = relu(activations['Z'+str(l)])
 
+  # for layer L apply sigmoid activation
   activations['Z'+str(L)] = np.dot(params['W'+str(L)], activations['A'+str(L-1)]) + params['b'+str(L)]
-  activations['A'+str(L)] = sigmoid(activations['Z'+str(L)])
-    
-  
+  activations['A'+str(L)] = sigmoid(activations['Z'+str(L)])  
   
   return activations
-
-
-
-  
-
 
 
 def back_prop(activations, params, Y):
@@ -81,7 +79,7 @@ def back_prop(activations, params, Y):
 
   # for layers L-1 to 1
   for l in range(1, L):
-    dZ_l = np.dot(params['W'+str(l+1)].T, dZ_l) * deriv_relu(cache['Z'+str(l)])
+    dZ_l = np.dot(params['W'+str(l+1)].T, dZ_l) * deriv_relu(activations['Z'+str(l)])
     grads['dW'+str(l)] = 1 / m * np.dot(dZ_l, activations['A'+str(l-1)].T)
     # NOTA MIA cache deve contenere cache = {'Z1':... , 'Z2': ...}
     # NOTA MIA  A0 = X
@@ -98,3 +96,24 @@ def update_params(params, grads, alpha):
     params_updated['b'+str(l)] = params['b'+str(l)] - alpha*grads['db'+str(l)]
 
   return params_updated
+
+def cross_entropy(Y, Y_hat, epsilon=1e-12):
+  """
+  Compute cross entropy between target Y_hat (encoded as one-hot vector)
+  and predictions Y.
+  Inputs: Y (k, m) ndarray
+          Y_hat (k, m) ndarray
+          k: number of classes
+          N: number of samples
+  Output: cross entropy (scalar)
+  sources:
+    code: https://stackoverflow.com/questions/47377222/what-is-the-problem-with-my-implementation-of-the-cross-entropy-function
+    formula: https://medium.com/unpackai/cross-entropy-loss-in-ml-d9f22fc11fe0#:~:text=Cross%2Dentropy%20can%20be%20calculated,*%20log(Q(x))
+  """
+  
+  # clip predictions to avoid values of 0 and 1
+  Y = np.clip(Y, epsilon, 1.-epsilon)
+  # sum on the columns of Y_hat * np.log(Y), then take the mean 
+  # between the m samples
+  cross_entropy = -np.mean(np.sum(Y_hat * np.log(Y), axis=0))
+  return cross_entropy
