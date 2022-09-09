@@ -1,5 +1,19 @@
 import numpy as np
 
+def shuffle_rows(data):
+  """
+  This function shuffles the row of the input dataframe.
+  Input: data (pandas.DataFrame or ndarra)
+  Output: shuffled data (ndarray)
+  """
+  # Convert input dataframe to ndarray
+  data = np.array(data)
+  np.random.shuffle(data)
+  return data
+
+def normalize_pixels(data):
+  return data/255.
+
 def init_params(layers_dims):
   params = {}
   for layer in range(1,len(layers_dims)):
@@ -140,6 +154,7 @@ def gradient_descent_optimization(X, Y, layers_size, max_iter, alpha):
   accuracies = []
   losses = []
   for iter in range(1,max_iter+1):
+    print('Iter:', iter)
     # compute activations: forward propagation
     activations = forward_prop(X, params)
     # make prediction
@@ -157,6 +172,9 @@ def gradient_descent_optimization(X, Y, layers_size, max_iter, alpha):
 
     # update the parameters
     params = update_params(params, grads, alpha)
+
+    if iter % 10 == 0:
+      print('Accuracy at iter {}: {}'.format(iter, accuracy))
 
     # magari plottare il grafico ogni 10 iter
   return params
