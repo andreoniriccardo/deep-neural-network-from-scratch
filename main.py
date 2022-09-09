@@ -14,20 +14,22 @@ def main():
   train_size = round(df_train.shape[0] * train_val_split)
   data_train = df_train[:train_size,:].T
   data_val = df_train[train_size:,:].T
-
+  
   # divide input features and target feature
   X_train = data_train[1:]
   y_train = data_train[0]
   X_val = df_train[1:]
   y_val = df_train[0]
+  print('X_train size', X_train.shape)
+  print('y_train size', y_train.shape)
   
   # normalize training and val sets
   X_train = normalize_pixels(X_train)
   X_val = normalize_pixels(X_val)
 
   # set network and optimizer parameters
-  layers_dims = [784, 10, 10]
-  max_iter = 100
+  layers_dims = [784, 10, 10, 10]
+  max_iter = 1000
   alpha = 0.1
 
   # train the network

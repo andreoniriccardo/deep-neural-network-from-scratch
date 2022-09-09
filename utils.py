@@ -18,7 +18,7 @@ def init_params(layers_dims):
   params = {}
   for layer in range(1,len(layers_dims)):
     params['W'+str(layer)] = np.random.randn(layers_dims[layer], layers_dims[layer-1])*0.01
-    params['b'+str(layer)] = np.random.randn(layers_dims[layer])*0.01
+    params['b'+str(layer)] = np.random.randn(layers_dims[layer],1)*0.01
 
   return params
   
@@ -77,27 +77,33 @@ def back_prop(activations, params, Y):
   Inputs:
   activations: dictionary like {'A0':..., 'A1':..., 'Z1':..., 'A2':..., ...}
   params: dictionary like {'W1':..., 'b1':..., 'W2':...}
+  Y
   Output:
   gra
   
   """
-  m = Y.shape[1]
+  
   L = len(params) // 2
 
   grads = {}
   # for last layer L
   one_hot_Y = one_hot(Y)
-  dZ_l = activations['A'+str(L)] - one_hot_Y
-  grads['dW'+str(L)] = 1 / m * np.dot(dZ_l, activations['A'+str(L-1)].T)
-  grads['db'+str(L)] = 1 / m * np.sum(dZ_l)
+  
+  m = one_hot_Y.shape[1]
+  
+  derivatives = {}
+  
+  derivatives['dZ'+str(L)] = activations['A'+str(L)] - one_hot_Y
+  grads['dW'+str(L)] = 1 / m * np.dot(derivatives['dZ'+str(L)], activations['A'+str(L-1)].T)
+  grads['db'+str(L)] = 1 / m * np.sum(derivatives['dZ'+str(L)])
 
   # for layers L-1 to 1
-  for l in range(1, L):
-    dZ_l = np.dot(params['W'+str(l+1)].T, dZ_l) * deriv_relu(activations['Z'+str(l)])
-    grads['dW'+str(l)] = 1 / m * np.dot(dZ_l, activations['A'+str(l-1)].T)
+  for l in reversed(range(1, L)):
+    derivatives['dZ'+str(l)] = np.dot(params['W'+str(l+1)].T, derivatives['dZ'+str(l+1)]) * deriv_relu(activations['Z'+str(l)])
+    grads['dW'+str(l)] = 1 / m * np.dot(derivatives['dZ'+str(l)], activations['A'+str(l-1)].T)
     # NOTA MIA cache deve contenere cache = {'Z1':... , 'Z2': ...}
     # NOTA MIA  A0 = X
-    grads['db'+str(l)] = 1 / m * np.sum(dZ_l)
+    grads['db'+str(l)] = 1 / m * np.sum(derivatives['dZ'+str(l)])
   return grads
 
 def update_params(params, grads, alpha):
@@ -154,7 +160,6 @@ def gradient_descent_optimization(X, Y, layers_size, max_iter, alpha):
   accuracies = []
   losses = []
   for iter in range(1,max_iter+1):
-    print('Iter:', iter)
     # compute activations: forward propagation
     activations = forward_prop(X, params)
     # make prediction
