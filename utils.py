@@ -17,8 +17,8 @@ def normalize_pixels(data):
 def init_params(layers_dims):
   params = {}
   for layer in range(1,len(layers_dims)):
-    params['W'+str(layer)] = np.random.randn(layers_dims[layer], layers_dims[layer-1])*0.01
-    params['b'+str(layer)] = np.random.randn(layers_dims[layer],1)*0.01
+    params['W'+str(layer)] = np.random.randn(layers_dims[layer], layers_dims[layer-1])*0.01 + 10
+    params['b'+str(layer)] = np.random.randn(layers_dims[layer],1)*0.01 + 10
 
   return params
   
@@ -26,12 +26,14 @@ def relu(Z):
   return np.maximum(Z,0)
 
 def sigmoid(Z):
-  A = np.exp(Z)/sum(np.exp(Z))
+  A = 1/(1+np.exp(-Z))
   return A
 
 def deriv_relu(Z):
   return Z > 0
 
+def deriv_sigmoid(Z):
+    return sigmoid(Z)*(1. - sigmoid(Z))
 
 def one_hot(Y):
   """
@@ -92,8 +94,10 @@ def back_prop(activations, params, Y):
   m = one_hot_Y.shape[1]
   
   derivatives = {}
-  
-  derivatives['dZ'+str(L)] = activations['A'+str(L)] - one_hot_Y
+  dAL = - (np.divide(one_hot_Y, activations['A'+str(L)]) - np.divide(1 - one_hot_Y, 1 - activations['A'+str(L)]))
+  derivatives['dZ'+str(L)] = dAL * deriv_sigmoid(activations['Z'+str(L)])
+  #derivatives['dZ'+str(L)] = (activations['A'+str(L)] - one_hot_Y) * deriv_sigmoid(activations['Z'+str(L)])
+  #derivatives['dZ'+str(L)] = activations['A'+str(L)] - one_hot_Y
   grads['dW'+str(L)] = 1 / m * np.dot(derivatives['dZ'+str(L)], activations['A'+str(L-1)].T)
   grads['db'+str(L)] = 1 / m * np.sum(derivatives['dZ'+str(L)])
 
@@ -101,9 +105,10 @@ def back_prop(activations, params, Y):
   for l in reversed(range(1, L)):
     derivatives['dZ'+str(l)] = np.dot(params['W'+str(l+1)].T, derivatives['dZ'+str(l+1)]) * deriv_relu(activations['Z'+str(l)])
     grads['dW'+str(l)] = 1 / m * np.dot(derivatives['dZ'+str(l)], activations['A'+str(l-1)].T)
+    #print('max grads W', str(l), np.max(grads['dW'+str(l)]))
     # NOTA MIA cache deve contenere cache = {'Z1':... , 'Z2': ...}
     # NOTA MIA  A0 = X
-    grads['db'+str(l)] = 1 / m * np.sum(derivatives['dZ'+str(l)])
+    grads['db'+str(l)] = 1 / m * np.sum(derivatives['dZ'+str(l)], axis=1, keepdims=True)
   return grads
 
 def update_params(params, grads, alpha):

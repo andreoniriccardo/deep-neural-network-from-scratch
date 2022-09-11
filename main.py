@@ -23,13 +23,23 @@ def main():
   print('X_train size', X_train.shape)
   print('y_train size', y_train.shape)
   
+  """
+  # solo per debuggare
+  X_train = X_train[387:397,:]
+  y_train = y_train[387:397]
+  print('X_train size', X_train.shape)
+  print('y_train size', y_train.shape)
+  """
+  
+  
+  
   # normalize training and val sets
   X_train = normalize_pixels(X_train)
   X_val = normalize_pixels(X_val)
 
-  # set network and optimizer parameters
-  layers_dims = [784, 10, 10, 10]
-  max_iter = 1000
+  # set network and optimizer parameters  
+  layers_dims = [784, 10, 10, 10, 10]
+  max_iter = 100
   alpha = 0.1
 
   # train the network
