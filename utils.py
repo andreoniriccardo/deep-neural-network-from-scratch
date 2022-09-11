@@ -17,23 +17,42 @@ def normalize_pixels(data):
 def init_params(layers_dims):
   params = {}
   for layer in range(1,len(layers_dims)):
-    params['W'+str(layer)] = np.random.randn(layers_dims[layer], layers_dims[layer-1])*0.01 + 10
-    params['b'+str(layer)] = np.random.randn(layers_dims[layer],1)*0.01 + 10
-
+    """
+    # Old
+    params['W'+str(layer)] = np.random.randn(layers_dims[layer], layers_dims[layer-1])*0.01
+    params['b'+str(layer)] = np.random.randn(layers_dims[layer],1)*0.01
+    """
+    params['W'+str(layer)] = np.random.randn(layers_dims[layer], layers_dims[layer-1]) * np.sqrt(1. / layers_dims[layer])
+    params['b'+str(layer)] = np.random.randn(layers_dims[layer],1) * np.sqrt(1. / layers_dims[layer])
+    
   return params
   
 def relu(Z):
   return np.maximum(Z,0)
 
-def sigmoid(Z):
-  A = 1/(1+np.exp(-Z))
+def softmax(Z):
+  """
+    # used the numerical stable version from here: https://mlfromscratch.com/neural-network-tutorial/#/
+  exps = np.exp(Z - Z.max())
+  A = exps / np.sum(exps, axis=0)
+  """
+  A = np.exp(Z) / sum(np.exp(Z))
   return A
 
 def deriv_relu(Z):
   return Z > 0
 
-def deriv_sigmoid(Z):
-    return sigmoid(Z)*(1. - sigmoid(Z))
+def deriv_softmax(Z):
+    """
+    # used the numerical stable version from here: https://mlfromscratch.com/neural-network-tutorial/#/
+    
+    exps = np.exp(Z - Z.max())
+    dZ = exps / np.sum(exps, axis=0) * (1 - exps / np.sum(exps, axis=0))
+    """
+    
+    dZ = np.exp(Z) / sum(np.exp(Z)) * (1. - np.exp(Z) / sum(np.exp(Z)))
+    
+    return dZ
 
 def one_hot(Y):
   """
@@ -69,7 +88,7 @@ def forward_prop(X, params):
 
   # for layer L apply sigmoid activation
   activations['Z'+str(L)] = np.dot(params['W'+str(L)], activations['A'+str(L-1)]) + params['b'+str(L)]
-  activations['A'+str(L)] = sigmoid(activations['Z'+str(L)])  
+  activations['A'+str(L)] = softmax(activations['Z'+str(L)])  
   
   return activations
 
@@ -93,14 +112,33 @@ def back_prop(activations, params, Y):
   
   m = one_hot_Y.shape[1]
   
+  
+  # Old approach
   derivatives = {}
-  dAL = - (np.divide(one_hot_Y, activations['A'+str(L)]) - np.divide(1 - one_hot_Y, 1 - activations['A'+str(L)]))
-  derivatives['dZ'+str(L)] = dAL * deriv_sigmoid(activations['Z'+str(L)])
-  #derivatives['dZ'+str(L)] = (activations['A'+str(L)] - one_hot_Y) * deriv_sigmoid(activations['Z'+str(L)])
-  #derivatives['dZ'+str(L)] = activations['A'+str(L)] - one_hot_Y
+  
+  #∟derivatives['dZ'+str(L)] = (activations['A'+str(L)] - one_hot_Y) * deriv_softmax(activations['Z'+str(L)])
+  derivatives['dZ'+str(L)] = (activations['A'+str(L)] - one_hot_Y)
   grads['dW'+str(L)] = 1 / m * np.dot(derivatives['dZ'+str(L)], activations['A'+str(L-1)].T)
   grads['db'+str(L)] = 1 / m * np.sum(derivatives['dZ'+str(L)])
-
+  
+  """
+  # Approach from: https://mlfromscratch.com/neural-network-tutorial/#/
+  derivatives = {}
+  derivatives['dZ'+str(L)] = activations['A'+str(L)] - one_hot_Y
+  output = activations['A'+str(L)]
+  error = 2 * (output - one_hot_Y) / output.shape[0] * deriv_softmax(activations['Z'+str(L)])
+  grads['dW'+str(L)] = 1 / m * np.outer(error, activations['A'+str(L-1)])
+  grads['db'+str(L)] = 1 / m * np.sum(derivatives['dZ'+str(L)])
+  
+  for l in reversed(range(1, L)):
+      error = np.dot(params['W'+str(l+1)].T, error) * deriv_relu(activations['Z'+str(l)])
+      grads['dW'+str(l)] = 1 / m * np.outer(error, activations['A'+str(l-1)])
+      derivatives['dZ'+str(l)] = np.dot(params['W'+str(l+1)].T, derivatives['dZ'+str(l+1)]) * deriv_relu(activations['Z'+str(l)])
+      grads['db'+str(l)] = 1 / m * np.sum(derivatives['dZ'+str(l)], axis=1, keepdims=True)
+  """
+  
+  
+  # Old approach
   # for layers L-1 to 1
   for l in reversed(range(1, L)):
     derivatives['dZ'+str(l)] = np.dot(params['W'+str(l+1)].T, derivatives['dZ'+str(l+1)]) * deriv_relu(activations['Z'+str(l)])
@@ -109,6 +147,7 @@ def back_prop(activations, params, Y):
     # NOTA MIA cache deve contenere cache = {'Z1':... , 'Z2': ...}
     # NOTA MIA  A0 = X
     grads['db'+str(l)] = 1 / m * np.sum(derivatives['dZ'+str(l)], axis=1, keepdims=True)
+  
   return grads
 
 def update_params(params, grads, alpha):

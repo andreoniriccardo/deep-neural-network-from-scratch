@@ -38,8 +38,8 @@ def main():
   X_val = normalize_pixels(X_val)
 
   # set network and optimizer parameters  
-  layers_dims = [784, 10, 10, 10, 10]
-  max_iter = 100
+  layers_dims = [784, 256, 128, 64, 10]
+  max_iter = 600
   alpha = 0.1
 
   # train the network
