@@ -39,7 +39,8 @@ def main():
 
   # set network and optimizer parameters  
   layers_dims = [784, 256, 128, 64, 10]
-  max_iter = 600
+  # layers_dims = [784, 10, 10]
+  max_iter = 500
   alpha = 0.1
 
   # train the network

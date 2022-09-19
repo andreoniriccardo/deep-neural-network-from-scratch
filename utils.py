@@ -1,4 +1,7 @@
 import numpy as np
+import matplotlib.pyplot as plt
+plt.style.use('seaborn-whitegrid')
+import seaborn as sns
 
 def shuffle_rows(data):
   """
@@ -17,11 +20,6 @@ def normalize_pixels(data):
 def init_params(layers_dims):
   params = {}
   for layer in range(1,len(layers_dims)):
-    """
-    # Old
-    params['W'+str(layer)] = np.random.randn(layers_dims[layer], layers_dims[layer-1])*0.01
-    params['b'+str(layer)] = np.random.randn(layers_dims[layer],1)*0.01
-    """
     params['W'+str(layer)] = np.random.randn(layers_dims[layer], layers_dims[layer-1]) * np.sqrt(1. / layers_dims[layer])
     params['b'+str(layer)] = np.random.randn(layers_dims[layer],1) * np.sqrt(1. / layers_dims[layer])
     
@@ -31,27 +29,14 @@ def relu(Z):
   return np.maximum(Z,0)
 
 def softmax(Z):
-  """
-    # used the numerical stable version from here: https://mlfromscratch.com/neural-network-tutorial/#/
-  exps = np.exp(Z - Z.max())
-  A = exps / np.sum(exps, axis=0)
-  """
   A = np.exp(Z) / sum(np.exp(Z))
   return A
 
 def deriv_relu(Z):
   return Z > 0
 
-def deriv_softmax(Z):
-    """
-    # used the numerical stable version from here: https://mlfromscratch.com/neural-network-tutorial/#/
-    
-    exps = np.exp(Z - Z.max())
-    dZ = exps / np.sum(exps, axis=0) * (1 - exps / np.sum(exps, axis=0))
-    """
-    
+def deriv_softmax(Z):    
     dZ = np.exp(Z) / sum(np.exp(Z)) * (1. - np.exp(Z) / sum(np.exp(Z)))
-    
     return dZ
 
 def one_hot(Y):
@@ -73,7 +58,7 @@ def forward_prop(X, params):
   """
   Forward propagation for the L layers.
   First (L-1) layers: relu activation
-  Last layer: sigmoid activation
+  Last layer: softmax activation
   """
   # number of layers (note: params contains W and b for each layer, so it's necessary to do //2)
   L = len(params) // 2
@@ -86,7 +71,7 @@ def forward_prop(X, params):
     activations['Z'+str(l)] = np.dot(params['W'+str(l)], activations['A'+str(l-1)]) + params['b'+str(l)]
     activations['A'+str(l)] = relu(activations['Z'+str(l)])
 
-  # for layer L apply sigmoid activation
+  # for layer L apply softmax activation
   activations['Z'+str(L)] = np.dot(params['W'+str(L)], activations['A'+str(L-1)]) + params['b'+str(L)]
   activations['A'+str(L)] = softmax(activations['Z'+str(L)])  
   
@@ -100,52 +85,25 @@ def back_prop(activations, params, Y):
   params: dictionary like {'W1':..., 'b1':..., 'W2':...}
   Y
   Output:
-  gra
-  
+  grads: dictionary like {'dW1':..., 'db1':..., ...}
   """
   
-  L = len(params) // 2
-
-  grads = {}
-  # for last layer L
-  one_hot_Y = one_hot(Y)
-  
+  L = len(params) // 2  
+  one_hot_Y = one_hot(Y)  
   m = one_hot_Y.shape[1]
   
-  
-  # Old approach
   derivatives = {}
+  grads = {}
   
-  #∟derivatives['dZ'+str(L)] = (activations['A'+str(L)] - one_hot_Y) * deriv_softmax(activations['Z'+str(L)])
+  # for layer L
   derivatives['dZ'+str(L)] = (activations['A'+str(L)] - one_hot_Y)
   grads['dW'+str(L)] = 1 / m * np.dot(derivatives['dZ'+str(L)], activations['A'+str(L-1)].T)
   grads['db'+str(L)] = 1 / m * np.sum(derivatives['dZ'+str(L)])
-  
-  """
-  # Approach from: https://mlfromscratch.com/neural-network-tutorial/#/
-  derivatives = {}
-  derivatives['dZ'+str(L)] = activations['A'+str(L)] - one_hot_Y
-  output = activations['A'+str(L)]
-  error = 2 * (output - one_hot_Y) / output.shape[0] * deriv_softmax(activations['Z'+str(L)])
-  grads['dW'+str(L)] = 1 / m * np.outer(error, activations['A'+str(L-1)])
-  grads['db'+str(L)] = 1 / m * np.sum(derivatives['dZ'+str(L)])
-  
-  for l in reversed(range(1, L)):
-      error = np.dot(params['W'+str(l+1)].T, error) * deriv_relu(activations['Z'+str(l)])
-      grads['dW'+str(l)] = 1 / m * np.outer(error, activations['A'+str(l-1)])
-      derivatives['dZ'+str(l)] = np.dot(params['W'+str(l+1)].T, derivatives['dZ'+str(l+1)]) * deriv_relu(activations['Z'+str(l)])
-      grads['db'+str(l)] = 1 / m * np.sum(derivatives['dZ'+str(l)], axis=1, keepdims=True)
-  """
-  
-  
-  # Old approach
+   
   # for layers L-1 to 1
   for l in reversed(range(1, L)):
     derivatives['dZ'+str(l)] = np.dot(params['W'+str(l+1)].T, derivatives['dZ'+str(l+1)]) * deriv_relu(activations['Z'+str(l)])
     grads['dW'+str(l)] = 1 / m * np.dot(derivatives['dZ'+str(l)], activations['A'+str(l-1)].T)
-    #print('max grads W', str(l), np.max(grads['dW'+str(l)]))
-    # NOTA MIA cache deve contenere cache = {'Z1':... , 'Z2': ...}
-    # NOTA MIA  A0 = X
     grads['db'+str(l)] = 1 / m * np.sum(derivatives['dZ'+str(l)], axis=1, keepdims=True)
   
   return grads
@@ -193,7 +151,7 @@ def get_accuracy(Y_hat, Y):
   Y_hat (1,m) ndarray
   Y (1,m) ndarray
   Output:
-  accuract (scalar)
+  accuracy (scalar)
   """
   return np.sum(Y_hat == Y) / Y.size
 
@@ -225,5 +183,12 @@ def gradient_descent_optimization(X, Y, layers_size, max_iter, alpha):
     if iter % 10 == 0:
       print('Accuracy at iter {}: {}'.format(iter, accuracy))
 
-    # magari plottare il grafico ogni 10 iter
+  # plot training accuracy and loss
+  plt.plot(range(1, max_iter+1), accuracies, '-', color=sns.color_palette('deep')[0], linewidth=2, label='Training Accuracy')
+  plt.plot(range(1, max_iter+1), losses, ':', color=sns.color_palette('deep')[2], linewidth=2, label='Training Loss')
+  plt.title("Network's Architecture: {}".format(layers_size))
+  plt.legend(loc="upper right")
+  plt.xlabel("X axis label")
+  plt.savefig('images/training_acc_loss_{}.png'.format(layers_size), format='png', dpi=1200)
+    
   return params
