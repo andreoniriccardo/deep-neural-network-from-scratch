@@ -20,8 +20,6 @@ def main():
   y_train = data_train[0]
   X_val = df_train[1:]
   y_val = df_train[0]
-  print('X_train size', X_train.shape)
-  print('y_train size', y_train.shape)
   
   # normalize training and val sets
   X_train = normalize_pixels(X_train)
