@@ -4,6 +4,8 @@ The reason for imposing myself on this task is that nowadays it is effortless to
 
 This approach differs from other implementations for the strategy of storing the cached values. Also, differently from most implementation, this code allows to compare infinite possible network architectures as the number of layers and activation units is defined by the user.
 
+An article describing in detail both the theoretical and coding part has been published on [Towards Data Science](https://towardsdatascience.com/). You can find it [here](https://towardsdatascience.com/building-a-deep-neural-network-from-scratch-using-numpy-4f28a1df157a).
+
 This repository is organized as follows.
 
 `train.csv`
